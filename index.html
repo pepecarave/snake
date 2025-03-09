@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Juego de la Serpiente</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            border: 2px solid black;
+            touch-action: none;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .button {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            font-size: 20px;
+            background-color: lightgray;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Juego de la Serpiente</h1>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="controls">
+        <button class="button" id="up">⬆️</button>
+    </div>
+    <div class="controls">
+        <button class="button" id="left">⬅️</button>
+        <button class="button" id="right">➡️</button>
+    </div>
+    <div class="controls">
+        <button class="button" id="down">⬇️</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const box = 20;
+        let snake = [{ x: 10 * box, y: 10 * box }];
+        let food = {
+            x: Math.floor(Math.random() * 20) * box,
+            y: Math.floor(Math.random() * 20) * box
+        };
+        let dx = box;
+        let dy = 0;
+        let changingDirection = false;
+        let speed = 150; // Reducido a 75% de la velocidad anterior
+        const minSpeed = 100; // Velocidad mínima aumentada para una progresión más suave
+        const speedIncrement = 1; // Incremento de velocidad más gradual
+        
+        document.addEventListener("keydown", changeDirection);
+        document.getElementById("up").addEventListener("click", () => changeDirection({ keyCode: 38 }));
+        document.getElementById("down").addEventListener("click", () => changeDirection({ keyCode: 40 }));
+        document.getElementById("left").addEventListener("click", () => changeDirection({ keyCode: 37 }));
+        document.getElementById("right").addEventListener("click", () => changeDirection({ keyCode: 39 }));
+        
+        function changeDirection(event) {
+            if (changingDirection) return;
+            changingDirection = true;
+            const keyPressed = event.keyCode;
+            const goingUp = dy === -box;
+            const goingDown = dy === box;
+            const goingRight = dx === box;
+            const goingLeft = dx === -box;
+            
+            if (keyPressed === 37 && !goingRight) {
+                dx = -box;
+                dy = 0;
+            } else if (keyPressed === 38 && !goingDown) {
+                dx = 0;
+                dy = -box;
+            } else if (keyPressed === 39 && !goingLeft) {
+                dx = box;
+                dy = 0;
+            } else if (keyPressed === 40 && !goingUp) {
+                dx = 0;
+                dy = box;
+            }
+        }
+        
+        function drawSnake() {
+            snake.forEach(part => {
+                ctx.fillStyle = "green";
+                ctx.fillRect(part.x, part.y, box, box);
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(part.x, part.y, box, box);
+            });
+        }
+        
+        function moveSnake() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                food = {
+                    x: Math.floor(Math.random() * 20) * box,
+                    y: Math.floor(Math.random() * 20) * box
+                };
+                if (speed > minSpeed) speed -= speedIncrement;
+                clearInterval(game);
+                game = setInterval(gameLoop, speed);
+            } else {
+                snake.pop();
+            }
+        }
+        
+        function checkCollision() {
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
+                    return true;
+                }
+            }
+            const hitLeftWall = snake[0].x < 0;
+            const hitRightWall = snake[0].x >= canvas.width;
+            const hitTopWall = snake[0].y < 0;
+            const hitBottomWall = snake[0].y >= canvas.height;
+            return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
+        }
+        
+        function drawFood() {
+            ctx.fillStyle = "red";
+            ctx.fillRect(food.x, food.y, box, box);
+        }
+        
+        function gameLoop() {
+            if (checkCollision()) {
+                alert("¡Game Over!");
+                document.location.reload();
+                return;
+            }
+            changingDirection = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawFood();
+            moveSnake();
+            drawSnake();
+        }
+        
+        let game = setInterval(gameLoop, speed);
+    </script>
+</body>
+</html>
